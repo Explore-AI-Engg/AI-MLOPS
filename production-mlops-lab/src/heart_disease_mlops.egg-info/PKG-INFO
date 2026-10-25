@@ -1,0 +1,11 @@
+Metadata-Version: 2.4
+Name: heart-disease-mlops
+Version: 0.1.0
+Summary: Production-style MLOps project for heart disease risk classification
+Requires-Python: <3.13,>=3.11
+License-File: LICENSE
+Requires-Dist: pandas<3,>=2.1
+Requires-Dist: scikit-learn<2,>=1.4
+Provides-Extra: dev
+Requires-Dist: pytest<9,>=8; extra == "dev"
+Dynamic: license-file
