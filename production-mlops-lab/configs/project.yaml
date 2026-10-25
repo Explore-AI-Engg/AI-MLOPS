@@ -1,0 +1,35 @@
+project:
+  name: heart-disease-mlops
+  purpose: educational-production-style-mlops
+  domain: healthcare-risk-classification
+  clinical_use: prohibited
+
+data:
+  source_name: uci-heart-disease
+  source_url: https://archive.ics.uci.edu/static/public/45/heart+disease.zip
+  raw_storage: data/raw
+  processed_storage: data/processed
+  schema_status: pending-inspection
+  target_status: pending-inspection
+
+model:
+  task: binary-classification
+  framework: pending-selection
+  export_format: onnx
+  runtime: onnxruntime
+
+tracking:
+  system: mlflow
+
+serving:
+  framework: fastapi
+
+deployment:
+  container_registry: google-artifact-registry
+  platform: google-kubernetes-engine
+
+monitoring:
+  metrics: prometheus
+  dashboards: grafana
+  data_drift: planned
+  performance_drift: planned

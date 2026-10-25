@@ -1,24 +1,50 @@
-.venv/
+# Python
 __pycache__/
+*.py[cod]
+*.so
 .pytest_cache/
 .ruff_cache/
-.ipynb_checkpoints/
+.mypy_cache/
 
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Environment and secrets
 .env
-*.key
+.env.*
+!.env.example
 *.pem
-*.p12
-*.pfx
+*.key
+*.json
+!configs/*.json
 
-mlruns/
+# Local data
 data/raw/*
 data/processed/*
-data/reference/*
-monitoring/production/*
-monitoring/reports/*
+!data/raw/.gitkeep
+!data/processed/.gitkeep
 
-artifacts/*.joblib
-artifacts/*.onnx
-artifacts/*metadata*.json
+# Generated ML artefacts
+artifacts/*
+!artifacts/.gitkeep
+mlruns/
+*.onnx
+*.joblib
+*.pkl
+*.pickle
 
+# Notebooks
+.ipynb_checkpoints/
+
+# macOS
 .DS_Store
+
+# Logs
+*.log
+logs/
+
+# IDE
+.vscode/
+.idea/
