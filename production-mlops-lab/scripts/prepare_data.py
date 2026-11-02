@@ -3,8 +3,8 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from data.ingestion import ingest_and_prepare
-from data.validation import write_validation_report
+from heart_disease_mlops.data.ingestion import ingest_and_prepare
+from heart_disease_mlops.data.validation import write_validation_report
 
 
 def parse_args() -> argparse.Namespace:

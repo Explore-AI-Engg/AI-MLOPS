@@ -5,7 +5,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from data.ingestion import (
+from heart_disease_mlops.data.ingestion import (
     DataContractError,
     RAW_COLUMNS,
     load_raw_dataset,

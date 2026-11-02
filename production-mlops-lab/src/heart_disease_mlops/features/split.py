@@ -5,7 +5,7 @@ from dataclasses import dataclass
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
-from features.pipeline import (
+from heart_disease_mlops.features.pipeline import (
     MODEL_FEATURES,
     TARGET_COLUMN,
 )

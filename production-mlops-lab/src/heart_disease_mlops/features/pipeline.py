@@ -8,7 +8,7 @@ from sklearn.impute import SimpleImputer
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
-from data.ingestion import (
+from heart_disease_mlops.data.ingestion import (
     DataContractError,
     RAW_COLUMNS,
     RAW_TARGET_VALUES,

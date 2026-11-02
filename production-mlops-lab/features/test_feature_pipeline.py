@@ -3,14 +3,14 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
-from data.ingestion import RAW_COLUMNS
-from features.pipeline import (
+from heart_disease_mlops.data.ingestion import RAW_COLUMNS
+from heart_disease_mlops.features.pipeline import (
     CATEGORICAL_FEATURES,
     NUMERIC_FEATURES,
     build_preprocessor,
     prepare_labeled_dataframe,
 )
-from features.split import split_dataset
+from heart_disease_mlops.features.split import split_dataset
 
 
 def make_raw_dataframe() -> pd.DataFrame:

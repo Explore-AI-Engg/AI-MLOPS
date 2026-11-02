@@ -2,12 +2,12 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from data.ingestion import load_raw_dataset
-from features.pipeline import (
+from heart_disease_mlops.data.ingestion import load_raw_dataset
+from heart_disease_mlops.features.pipeline import (
     build_preprocessor,
     prepare_labeled_dataframe,
 )
-from features.split import split_dataset
+from heart_disease_mlops.features.split import split_dataset
 
 
 def main() -> int:
