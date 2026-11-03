@@ -14,6 +14,11 @@ src/heart_disease_mlops/features/__init__.py
 src/heart_disease_mlops/features/pipeline.py
 src/heart_disease_mlops/features/split.py
 src/heart_disease_mlops/models/__init__.py
+src/heart_disease_mlops/models/evaluation.py
+src/heart_disease_mlops/models/quality.py
+src/heart_disease_mlops/models/training.py
 src/heart_disease_mlops/monitoring/__init__.py
 tests/test_data_ingestion.py
 tests/test_feature_pipeline.py
+tests/test_model_quality.py
+tests/test_onnx_validation.py

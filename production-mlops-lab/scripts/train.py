@@ -126,6 +126,7 @@ def main() -> int:
         )
 
         print(f"MLflow run ID: {run.info.run_id}")
+        print(f"MLflow model URI: runs:/{run.info.run_id}/model")
         print(f"Model: {MODEL_NAME}")
         print("Evaluation metrics:")
 
