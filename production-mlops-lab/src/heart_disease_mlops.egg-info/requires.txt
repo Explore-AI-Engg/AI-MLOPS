@@ -6,6 +6,10 @@ numpy<3,>=1.26
 onnx<2,>=1.16
 onnxruntime<2,>=1.18
 skl2onnx<2,>=1.17
+fastapi<1,>=0.115
+uvicorn[standard]<1,>=0.30
+prometheus-client<1,>=0.20
 
 [dev]
 pytest<9,>=8
+httpx2<3,>=2.16
