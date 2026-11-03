@@ -51,6 +51,11 @@ def parse_args() -> argparse.Namespace:
         type=Path,
         default=Path("artifacts/evaluation.json"),
     )
+    parser.add_argument(
+        "--model-uri-output",
+        type=Path,
+        default=Path("artifacts/model-uri.txt"),
+    )
     return parser.parse_args()
 
 
@@ -125,8 +130,18 @@ def main() -> int:
             artifact_path="model",
         )
 
+        model_uri = f"runs:/{run.info.run_id}/model"
+        args.model_uri_output.parent.mkdir(
+            parents=True,
+            exist_ok=True,
+        )
+        args.model_uri_output.write_text(
+            f"{model_uri}\n",
+            encoding="utf-8",
+        )
+
         print(f"MLflow run ID: {run.info.run_id}")
-        print(f"MLflow model URI: runs:/{run.info.run_id}/model")
+        print(f"MLflow model URI: {model_uri}")
         print(f"Model: {MODEL_NAME}")
         print("Evaluation metrics:")
 
