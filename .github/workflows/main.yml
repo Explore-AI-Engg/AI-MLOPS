@@ -1,0 +1,9 @@
+on:
+  push:
+    paths:
+      - 'files/production-mlops-lab/**'
+      - '.github/workflows/ci.yml'
+  pull_request:
+    paths:
+      - 'files/production-mlops-lab/**'
+      - '.github/workflows/ci.yml'
