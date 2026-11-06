@@ -10,7 +10,9 @@ class FakeRuntime:
         return 1, 0.75
 
 
-def test_health_endpoint() -> None:
+def test_health_endpoint(monkeypatch) -> None:
+    monkeypatch.setattr(api, "runtime", FakeRuntime())
+
     with TestClient(api.app) as client:
         response = client.get("/healthz")
 
