@@ -7,3 +7,4 @@ on:
     paths:
       - 'files/production-mlops-lab/**'
       - '.github/workflows/ci.yml'
+  workflow_dispatch:
