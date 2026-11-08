@@ -153,6 +153,7 @@ jobs:
       - name: Stop container
         if: always()
         run: docker stop heart-disease-api-ci || true
+        
   image-publishing:
     name: Publish container image
     runs-on: ubuntu-latest
