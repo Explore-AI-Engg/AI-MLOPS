@@ -104,12 +104,14 @@ jobs:
             --project="${PROJECT_ID}"
 
       - name: Render Kubernetes Deployment
+        working-directory: production-mlops-lab
         env:
           IMAGE_REFERENCE: ${{ steps.image.outputs.IMAGE_REFERENCE }}
         run: |
           ./scripts/render_kubernetes_manifests.sh
 
       - name: Validate Kubernetes manifests
+        working-directory: production-mlops-lab
         run: |
           kubectl apply \
             --dry-run=server \
@@ -121,6 +123,7 @@ jobs:
             -f deployment/kubernetes/.generated-deployment.yaml
 
       - name: Apply Kubernetes resources
+        working-directory: production-mlops-lab
         run: |
           kubectl apply \
             --namespace="${NAMESPACE}" \
@@ -167,7 +170,7 @@ jobs:
             exit 1
           fi
 
-      - name: Verify Service endpoints
+      - name: Verify Service endpoints     
         run: |
           ENDPOINT_COUNT="$(
             kubectl get endpointslice \
