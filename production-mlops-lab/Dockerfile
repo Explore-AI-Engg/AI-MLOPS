@@ -9,8 +9,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-RUN groupadd --system appgroup \
-    && useradd --system --gid appgroup --create-home appuser
+RUN groupadd --gid 10001 appgroup \
+    && useradd --uid 10001 --gid 10001 --create-home appuser
 
 COPY pyproject.toml README.md ./
 COPY src ./src
