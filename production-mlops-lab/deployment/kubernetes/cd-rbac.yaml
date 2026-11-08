@@ -19,6 +19,12 @@ rules:
       - update
       - patch
       
+  - apiGroups: [""]
+    resources:
+      - pods/portforward
+    verbs:
+      - create
+
   - apiGroups: ["discovery.k8s.io"]
     resources:
       - endpointslices

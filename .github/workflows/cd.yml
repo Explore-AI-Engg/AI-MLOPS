@@ -211,6 +211,7 @@ jobs:
           exit 1
 
       - name: Run post-deployment smoke test
+        working-directory: production-mlops-lab
         env:
           BASE_URL: http://127.0.0.1:8080
         run: |
