@@ -1,0 +1,242 @@
+name: CD
+
+on:
+  workflow_run:
+    workflows:
+      - CI
+    types:
+      - completed
+    branches:
+      - main
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: cd-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy approved CI image to GKE
+    if: >
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_branch == 'main'
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      actions: read
+      id-token: write
+
+    env:
+      PROJECT_ID: production-mlops-06102026
+      REGION: us-central1
+      ZONE: us-central1-a
+      CLUSTER_NAME: heart-disease-gke
+      NAMESPACE: heart-disease
+      CD_SERVICE_ACCOUNT: mlops-cd-deployer@production-mlops-06102026.iam.gserviceaccount.com
+
+    steps:
+      - name: Checkout the CI commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Download CI deployment metadata
+        uses: actions/download-artifact@v4
+        with:
+          name: deployment-metadata-${{ github.event.workflow_run.head_sha }}
+          path: ci-input
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: ${{ github.event.workflow_run.id }}
+
+      - name: Read and validate image reference
+        id: image
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          test -f ci-input/image-metadata.json
+
+          IMAGE_REFERENCE="$(
+            python -c '
+          import json
+          from pathlib import Path
+
+          path = Path("ci-input/image-metadata.json")
+          data = json.loads(path.read_text(encoding="utf-8"))
+          value = data["deployment_reference"]
+
+          if "@sha256:" not in value:
+              raise SystemExit("Deployment reference is not digest-pinned")
+
+          print(value)
+          '
+          )"
+
+          echo "IMAGE_REFERENCE=${IMAGE_REFERENCE}" >> "${GITHUB_OUTPUT}"
+          printf 'Using image digest: %s\n' "${IMAGE_REFERENCE}"
+
+      - name: Authenticate to Google Cloud
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: mlops-cd-deployer@production-mlops-06102026.iam.gserviceaccount.com
+          token_format: access_token
+
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: production-mlops-06102026
+
+      - name: Install GKE authentication plugin
+        run: |
+          gcloud components install gke-gcloud-auth-plugin --quiet
+
+      - name: Obtain GKE credentials
+        run: |
+          gcloud container clusters get-credentials \
+            "${CLUSTER_NAME}" \
+            --zone="${ZONE}" \
+            --project="${PROJECT_ID}"
+
+      - name: Render Kubernetes Deployment
+        env:
+          IMAGE_REFERENCE: ${{ steps.image.outputs.IMAGE_REFERENCE }}
+        run: |
+          ./scripts/render_kubernetes_manifests.sh
+
+      - name: Validate Kubernetes manifests
+        run: |
+          kubectl apply \
+            --dry-run=server \
+            --namespace="${NAMESPACE}" \
+            --validate=true \
+            -f deployment/kubernetes/cd-rbac.yaml \
+            -f deployment/kubernetes/configmap.yaml \
+            -f deployment/kubernetes/service.yaml \
+            -f deployment/kubernetes/.generated-deployment.yaml
+
+      - name: Apply Kubernetes resources
+        run: |
+          kubectl apply \
+            --namespace="${NAMESPACE}" \
+            -f deployment/kubernetes/configmap.yaml \
+            -f deployment/kubernetes/service.yaml \
+            -f deployment/kubernetes/.generated-deployment.yaml
+
+      - name: Wait for Deployment rollout
+        run: |
+          kubectl rollout status \
+            deployment/heart-disease-api \
+            --namespace="${NAMESPACE}" \
+            --timeout=180s
+
+      - name: Verify ready replicas
+        run: |
+          READY_REPLICAS="$(
+            kubectl get deployment heart-disease-api \
+              --namespace="${NAMESPACE}" \
+              --output=jsonpath='{.status.readyReplicas}'
+          )"
+
+          if [[ "${READY_REPLICAS}" != "2" ]]; then
+            echo "Expected 2 ready replicas, received: ${READY_REPLICAS:-0}" >&2
+            kubectl describe deployment heart-disease-api \
+              --namespace="${NAMESPACE}"
+            exit 1
+          fi
+
+      - name: Verify deployed image digest
+        env:
+          EXPECTED_IMAGE: ${{ steps.image.outputs.IMAGE_REFERENCE }}
+        run: |
+          ACTUAL_IMAGE="$(
+            kubectl get deployment heart-disease-api \
+              --namespace="${NAMESPACE}" \
+              --output=jsonpath='{.spec.template.spec.containers[?(@.name=="api")].image}'
+          )"
+
+          if [[ "${ACTUAL_IMAGE}" != "${EXPECTED_IMAGE}" ]]; then
+            echo "Image mismatch" >&2
+            echo "Expected: ${EXPECTED_IMAGE}" >&2
+            echo "Actual:   ${ACTUAL_IMAGE}" >&2
+            exit 1
+          fi
+
+      - name: Verify Service endpoints
+        run: |
+          ENDPOINT_COUNT="$(
+            kubectl get endpointslice \
+              --namespace="${NAMESPACE}" \
+              --selector=kubernetes.io/service-name=heart-disease-api \
+              --output=jsonpath='{range .items[*].endpoints[*]}{.conditions.ready}{"\n"}{end}' \
+              | grep -c '^true$' || true
+          )"
+
+          if [[ "${ENDPOINT_COUNT}" -lt 2 ]]; then
+            echo "Expected at least 2 ready endpoints, received: ${ENDPOINT_COUNT}" >&2
+            kubectl get endpointslice \
+              --namespace="${NAMESPACE}" \
+              --selector=kubernetes.io/service-name=heart-disease-api \
+              --output=yaml
+            exit 1
+          fi
+
+      - name: Start local port-forward
+        run: |
+          kubectl port-forward \
+            --namespace="${NAMESPACE}" \
+            service/heart-disease-api \
+            8080:80 > /tmp/heart-disease-port-forward.log 2>&1 &
+
+          echo $! > /tmp/heart-disease-port-forward.pid
+
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:8080/readyz; then
+              echo
+              echo "Port-forward is ready"
+              exit 0
+            fi
+
+            sleep 2
+          done
+
+          cat /tmp/heart-disease-port-forward.log
+          exit 1
+
+      - name: Run post-deployment smoke test
+        env:
+          BASE_URL: http://127.0.0.1:8080
+        run: |
+          ./scripts/container_smoke_test.sh
+
+      - name: Collect deployment diagnostics
+        if: failure()
+        run: |
+          kubectl get all \
+            --namespace="${NAMESPACE}" \
+            --output=wide
+
+          kubectl describe deployment heart-disease-api \
+            --namespace="${NAMESPACE}"
+
+          kubectl get events \
+            --namespace="${NAMESPACE}" \
+            --sort-by=.lastTimestamp
+
+          kubectl logs \
+            --namespace="${NAMESPACE}" \
+            --selector=app.kubernetes.io/name=heart-disease-api \
+            --all-containers=true \
+            --tail=100
+
+      - name: Stop port-forward
+        if: always()
+        run: |
+          if [[ -f /tmp/heart-disease-port-forward.pid ]]; then
+            kill "$(cat /tmp/heart-disease-port-forward.pid)" || true
+          fi

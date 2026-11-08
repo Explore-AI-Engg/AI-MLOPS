@@ -48,3 +48,4 @@ logs/
 # IDE
 .vscode/
 .idea/
+deployment/kubernetes/.generated-deployment.yaml

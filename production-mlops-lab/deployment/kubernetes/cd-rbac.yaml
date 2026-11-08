@@ -1,0 +1,52 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: heart-disease-cd-deployer
+  namespace: heart-disease
+rules:
+  - apiGroups: [""]
+    resources:
+      - configmaps
+      - services
+      - pods
+      - pods/log
+      - endpoints
+      - endpointslices
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+    # Secrets are intentionally excluded.
+  - apiGroups: ["apps"]
+    resources:
+      - deployments
+      - replicasets
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+  - apiGroups: ["apps"]
+    resources:
+      - deployments/rollback
+    verbs:
+      - create
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: heart-disease-cd-deployer
+  namespace: heart-disease
+subjects:
+  - kind: User
+    name: mlops-cd-deployer@production-mlops-06102026.iam.gserviceaccount.com
+    apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: Role
+  name: heart-disease-cd-deployer
+  apiGroup: rbac.authorization.k8s.io
