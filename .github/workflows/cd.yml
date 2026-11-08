@@ -219,16 +219,9 @@ jobs:
       - name: Collect deployment diagnostics
         if: failure()
         run: |
-          kubectl get all \
+          kubectl get deployments,replicasets,pods,services \
             --namespace="${NAMESPACE}" \
             --output=wide
-
-          kubectl describe deployment heart-disease-api \
-            --namespace="${NAMESPACE}"
-
-          kubectl get events \
-            --namespace="${NAMESPACE}" \
-            --sort-by=.lastTimestamp
 
           kubectl logs \
             --namespace="${NAMESPACE}" \
