@@ -11,7 +11,6 @@ rules:
       - pods
       - pods/log
       - endpoints
-      - endpointslices
     verbs:
       - get
       - list
@@ -19,6 +18,15 @@ rules:
       - create
       - update
       - patch
+      
+  - apiGroups: ["discovery.k8s.io"]
+    resources:
+      - endpointslices
+    verbs:
+      - get
+      - list
+      - watch
+
     # Secrets are intentionally excluded.
   - apiGroups: ["apps"]
     resources:
